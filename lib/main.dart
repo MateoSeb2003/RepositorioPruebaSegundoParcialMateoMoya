@@ -8,6 +8,7 @@ import 'package:proyecto_final_movil/screens/more.dart';
 import 'package:proyecto_final_movil/screens/order_details.dart';
 import 'package:proyecto_final_movil/screens/order_history.dart';
 import 'package:proyecto_final_movil/screens/register.dart';
+import 'package:proyecto_final_movil/screens/reportes.dart';
 import 'package:proyecto_final_movil/screens/user_menu.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -107,6 +108,11 @@ GoRouter router() {
       GoRoute(
         path: '/history',
         builder: (context, state) => const OrderHistory(),
+        routes: const [],
+      ),
+      GoRoute(
+        path: '/reportes',
+        builder: (context, state) => const ReportScreen(),
         routes: const [],
       ),
       GoRoute(

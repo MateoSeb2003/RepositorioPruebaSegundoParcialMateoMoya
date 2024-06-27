@@ -13,19 +13,23 @@ class UserModel extends ChangeNotifier {
   static const String _uidKey = 'app_uid';
   static const String _namesKey = 'app_unames';
   static const String _cidKey = 'app_cid';
+  static const String _actionsKey = 'actions';
+
+  List<UserAction> _actions = [];
 
   Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    _loadActions();
   }
 
   String? get token => _prefs.getString(_tokenKey);
   int? get userId => _prefs.getInt(_uidKey);
   String? get userNames => _prefs.getString(_namesKey);
   String? get userCid => _prefs.getString(_cidKey);
+  List<UserAction> get actions => _actions;
 
   Future<bool> login(LoginDTO login) async {
     try {
-      debugPrint("${_urlUsers}IniciarSesion");
       final response = await http.post(
         Uri.parse("${_urlUsers}IniciarSesion"),
         headers: contentTypeHeader(token ?? ""),
@@ -35,11 +39,13 @@ class UserModel extends ChangeNotifier {
         }),
       );
       if (response.statusCode == 200) {
-        final user = (json.decode(response.body)["value"] as Map<String, dynamic>);
+        final user =
+            (json.decode(response.body)["value"] as Map<String, dynamic>);
         setNames(user["nombreCompleto"]);
         setUid(user["idUsuario"]);
         setToken(user["token"]);
         setCid(user["cedulaCliente"]);
+        _recordAction('Inicio de sesión', 'Login');
         return true;
       }
       debugPrint('Error Occurred on login: ${response.body}');
@@ -75,6 +81,8 @@ class UserModel extends ChangeNotifier {
 
   void clearAll() {
     _prefs.clear();
+    _actions.clear();
+    notifyListeners();
   }
 
   Future<User?> getUserWithClient(String cid) async {
@@ -111,6 +119,7 @@ class UserModel extends ChangeNotifier {
 
         client.idUsuario = usr?.idUsuario ?? 0;
         client.clave = usr?.clave ?? "";
+        _recordAction('Obtuvo información de usuario para $cid', 'Fetch');
         return client;
       }
       debugPrint('Error Occurred on get user: ${response.body}');
@@ -151,6 +160,7 @@ class UserModel extends ChangeNotifier {
         );
 
         if (response.statusCode == 200) {
+          _recordAction('Creó usuario ${user.nombreCompleto}', 'Insert');
           return true;
         }
       }
@@ -186,7 +196,6 @@ class UserModel extends ChangeNotifier {
           "cedulaCliente": user.cedulaCliente,
         };
 
-        debugPrint(body.toString());
         final response = await http.put(
           Uri.parse("${_urlUsers}Editar"),
           headers: contentTypeHeader(token ?? ""),
@@ -194,6 +203,7 @@ class UserModel extends ChangeNotifier {
         );
 
         if (response.statusCode == 200) {
+          _recordAction('Actualizó usuario ${user.nombreCompleto}', 'Update');
           return true;
         }
         debugPrint('Error Occurred on Put user: ${response.statusCode}');
@@ -205,11 +215,56 @@ class UserModel extends ChangeNotifier {
     return false;
   }
 
+  void _recordAction(String action, String actionType) {
+    final userAction = UserAction(action, DateTime.now(), actionType);
+    _actions.add(userAction);
+    _saveActions();
+  }
+
+  void _saveActions() {
+    List<String> actions =
+        _actions.map((action) => jsonEncode(action.toJson())).toList();
+    _prefs.setStringList(_actionsKey, actions);
+  }
+
+  void _loadActions() {
+    List<String>? actions = _prefs.getStringList(_actionsKey);
+    if (actions != null) {
+      _actions = actions
+          .map((action) => UserAction.fromJson(jsonDecode(action)))
+          .toList();
+    }
+  }
+
   Map<String, String> contentTypeHeader(String token) {
     return {
       'Content-Type': 'application/json',
       'Authorization': 'Bearer $token',
     };
+  }
+}
+
+class UserAction {
+  final String action;
+  final DateTime timestamp;
+  final String actionType;
+
+  UserAction(this.action, this.timestamp, this.actionType);
+
+  Map<String, dynamic> toJson() {
+    return {
+      'action': action,
+      'timestamp': timestamp.toIso8601String(),
+      'actionType': actionType,
+    };
+  }
+
+  factory UserAction.fromJson(Map<String, dynamic> json) {
+    return UserAction(
+      json['action'],
+      DateTime.parse(json['timestamp']),
+      json['actionType'],
+    );
   }
 }
 
@@ -226,6 +281,7 @@ class User {
     this.correo = "",
     this.direccion = "",
     this.clave = "",
+    this.fotoPerfil,
   });
 
   final int idRol = 4;
@@ -238,6 +294,7 @@ class User {
   String? rolDescripcion;
   String? direccion;
   String? clave;
+  String? fotoPerfil;
 
   User.fromJson(Map<String, dynamic> json) {
     idUsuario = json["idUsuario"];
@@ -247,5 +304,6 @@ class User {
     direccion = json["direccion"];
     rolDescripcion = json["rolDescripcion"];
     clave = json["clave"];
+    fotoPerfil = json['fotoPerfil'];
   }
 }

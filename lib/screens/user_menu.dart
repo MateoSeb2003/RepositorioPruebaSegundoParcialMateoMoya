@@ -33,6 +33,12 @@ class UserMenu extends StatelessWidget {
                   },
                 ),
                 TextButton(
+                  child: const Text("Reportes"), 
+                  onPressed: () {            
+                    context.push('/reportes');
+                  },
+                ),
+                TextButton(
                   child: const Text("Cerrar Sesión"), 
                   onPressed: () {
                     var user = Provider.of<UserModel>(context, listen: false);

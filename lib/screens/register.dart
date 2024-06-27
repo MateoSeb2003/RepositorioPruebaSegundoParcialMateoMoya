@@ -111,37 +111,39 @@ class _RegisterState extends State<Register> {
               Padding(
                 padding: const EdgeInsets.only(top: 30),
                 child: ElevatedButton(
-                  onPressed: isLoading || disabled ? null : () async {
-                    setState(() {
-                      isLoading = true;
-                    });
-                    if (!_key.currentState!.validate()) {
-                      setState(() {
-                        isLoading = false;
-                      });
-                      return;
-                    }
+                  onPressed: isLoading || disabled
+                      ? null
+                      : () async {
+                          setState(() {
+                            isLoading = true;
+                          });
+                          if (!_key.currentState!.validate()) {
+                            setState(() {
+                              isLoading = false;
+                            });
+                            return;
+                          }
 
-                    _key.currentState!.save();
-                    await users.postUser(_data).then((s) {
-                      var snack = SnackBar(
-                          content: Text(s
-                              ? 'Usuario registrado'
-                              : 'Error al registrar el usuario. Consulte con soporte técnico'));
+                          _key.currentState!.save();
+                          await users.postUser(_data).then((s) {
+                            var snack = SnackBar(
+                                content: Text(s
+                                    ? 'Usuario registrado'
+                                    : 'Error al registrar el usuario. Consulte con soporte técnico'));
 
-                      ScaffoldMessenger.of(context).showSnackBar(snack);
-                      if (s) {
-                        setState(() {
-                          isLoading = false;
-                        });
-                        context.pop();
-                      } else {
-                        setState(() {
-                          isLoading = false;
-                        });
-                      }
-                    });
-                  },
+                            ScaffoldMessenger.of(context).showSnackBar(snack);
+                            if (s) {
+                              setState(() {
+                                isLoading = false;
+                              });
+                              context.pop();
+                            } else {
+                              setState(() {
+                                isLoading = false;
+                              });
+                            }
+                          });
+                        },
                   child: isLoading
                       ? const CircularProgressIndicator()
                       : const Text("Registrar Usuario"),
