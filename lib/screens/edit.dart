@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:proyecto_final_movil/components/labeled_text_field.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 
 class EditUser extends StatefulWidget {
   const EditUser({super.key, this.idUsuario});
@@ -17,9 +19,23 @@ class EditUser extends StatefulWidget {
 
 class _EditUserState extends State<EditUser> {
   final _data = User();
+
   final _key = GlobalKey<FormState>();
 
   Future<User?>? _future;
+  File? _image;
+  final picker = ImagePicker();
+
+  Future getImage() async {
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+
+    setState(() {
+      if (pickedFile != null) {
+        _image = File(pickedFile.path);
+        _data.fotoPerfil = pickedFile.path;
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +77,20 @@ class _EditUserState extends State<EditUser> {
                 key: _key,
                 child: ListView(
                   children: [
-                    const Icon(Icons.account_circle_rounded, size: 100),
+                    GestureDetector(
+                        onTap: getImage,
+                        child: CircleAvatar(
+                          radius: 50,
+                          backgroundColor:
+                              Colors.blue, // Color de fondo por defecto
+                          backgroundImage: snapshot.data?.fotoPerfil != null
+                              ? NetworkImage(snapshot.data!.fotoPerfil!)
+                              : null,
+                          child: snapshot.data?.fotoPerfil == null
+                              ? Icon(Icons.person,
+                                  size: 50, color: Colors.white)
+                              : null,
+                        )),
                     LabeledTextField(
                       labelText: "Cédula",
                       optional: false,
@@ -123,7 +152,8 @@ class _EditUserState extends State<EditUser> {
                           if (!_key.currentState!.validate()) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Por favor, corrija los errores en el formulario.'),
+                                content: Text(
+                                    'Por favor, corrija los errores en el formulario.'),
                               ),
                             );
                             return;
